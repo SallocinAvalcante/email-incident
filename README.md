@@ -1,4 +1,4 @@
-# Incident Response Case Study — Comprometimento de Conta Corporativa e Disparo de Phishing em Massa
+# Incident Response — Comprometimento de Conta Corporativa e Disparo de Phishing em Massa
 
 > Case anonimizado, baseado em um incidente real. Todos os nomes de empresas, colaboradores, provedores e endereços de e-mail/IP foram substituídos por identificadores genéricos (`Empresa-A`, `Colaborador-01`, `Provedor-A`, etc.). Indicadores diretamente relacionados ao ataque (domínio malicioso, hash, padrões de e-mail) foram preservados, pois possuem valor técnico e não identificam a vítima.
 
