@@ -2,11 +2,11 @@
 
 > Case anonimizado, baseado em um incidente real. Todos os nomes de empresas, colaboradores, provedores e endereços de e-mail/IP foram substituídos por identificadores genéricos (`Empresa-A`, `Colaborador-01`, `Provedor-A`, etc.). Indicadores diretamente relacionados ao ataque (domínio malicioso, hash, padrões de e-mail) foram preservados, pois possuem valor técnico e não identificam a vítima.
 
-## Objective
+## Objetivo
 
 Investigar a origem de um disparo em massa de e-mails de phishing partindo de uma conta corporativa legítima, determinar se houve comprometimento de credenciais ou execução de malware local, conter o incidente e validar a normalização do ambiente, documentando o processo de investigação como ele realmente ocorreu, incluindo hipóteses levantadas e depois confirmadas ou descartadas.
 
-## Incident Overview
+## Resumo do Incidente
 
 A conta de e-mail de um colaborador (`Colaborador-01`) da `Empresa-A` foi identificada enviando mensagens simulando "comprovantes fiscais" e "documentos disponíveis" para clientes e fornecedores externos, contendo um botão que direcionava a um domínio malicioso.
 
@@ -22,7 +22,7 @@ A investigação seguiu, em linhas gerais, esta progressão:
 8. Levantamento da lista completa de destinatários atingidos junto ao provedor e organização do aviso oficial aos clientes.
 9. Validação pós-contenção, com novas varreduras e confirmação, junto ao provedor, de que os disparos haviam cessado.
 
-## Investigation
+## Investigação
 
 A investigação evoluiu de forma incremental, com as hipóteses sendo reforçadas ou descartadas conforme novas evidências chegavam:
 
@@ -34,12 +34,12 @@ A investigação evoluiu de forma incremental, com as hipóteses sendo reforçad
 - 
 - **Confirmação**: a varredura remota do endpoint identificou um componente malicioso com persistência dupla em `AppData`, replicando exatamente o comportamento necessário para sustentar os disparos observados.
 
-## Findings
+## Achados
 
 **Confirmado:**
 - A conta corporativa foi utilizada, via submissão SMTP autenticada, para enviar phishing em massa a contatos externos (clientes e fornecedores) da empresa, em pelo menos dois dias consecutivos.
 - Havia um componente malicioso instalado no endpoint do colaborador, com dois mecanismos distintos de persistência.
-- O componente identificado abusava de um binário legítimo (interpretador Python) para executar um script malicioso ofuscado em Base64 — o hash do binário em si corresponde a um componente legítimo; o comportamento malicioso estava no script executado por ele, não no binário.
+- O componente identificado abusava de um binário legítimo (interpretador Python) para executar um script malicioso ofuscado em Base64 em um txt, o hash do binário em si corresponde a um componente legítimo; o comportamento malicioso estava no script executado por ele, não no binário.
 - Não foi identificado indício de propagação para outras máquinas da empresa.
 - Os disparos cessaram após a remoção do componente malicioso do endpoint, confirmado tanto pela verificação técnica quanto pelo retorno do provedor de e-mail.
 
@@ -50,7 +50,7 @@ A investigação evoluiu de forma incremental, com as hipóteses sendo reforçad
 - A origem exata da infecção inicial (o relatório aponta indícios de que seria anterior ao período analisado, sem evidências suficientes para precisar a origem).
 - Se a senha da conta foi efetivamente trocada pelo provedor — há um conflito entre dois retornos do próprio provedor sobre esse ponto (ver Timeline).
 
-## Malware / Endpoint Findings
+## Malware / Achados do endpoint
 
 Foi identificado, no endpoint do colaborador, um componente leve (classificado tecnicamente como infostealer/dropper) que:
 
@@ -59,9 +59,9 @@ Foi identificado, no endpoint do colaborador, um componente leve (classificado t
 - Mantinha um segundo processo, hospedado em uma pasta oculta disfarçada como diretório da Microsoft, responsável por recriar os artefatos do primeiro componente quando este era finalizado;
 - Gerava arquivos locais nomeados com base no endereço de e-mail da conta comprometida, sugerindo coleta/uso de dados de contatos locais para os disparos.
 
-A análise aprofundada do comportamento do malware (engenharia reversa, análise estática/dinâmica do script) será documentada separadamente na branch `malware-analysis`. Este README não avança além do que foi observado durante a resposta ao incidente.
+A análise aprofundada do comportamento do malware (engenharia reversa, análise estática/dinâmica do script) será documentada separadamente na branch `malware-analysis`. Este README da main não avança além do que foi observado durante a resposta ao incidente.
 
-## Containment
+## Contenção
 
 - Remoção manual dos dois componentes maliciosos identificados (processo principal finalizado via linha de comando; processo secundário finalizado via Gerenciador de Tarefas).
 - Isolamento dos arquivos maliciosos identificados em quarentena local, preservados para eventual análise futura.
@@ -71,7 +71,7 @@ A análise aprofundada do comportamento do malware (engenharia reversa, análise
 - Reset de senha solicitado ao provedor
 - Levantamento e comunicação da lista de destinatários externos atingidos, para envio de aviso oficial.
 
-## Outcome
+## Monitoramento
 
 Após a remoção do componente malicioso, novas varreduras não identificaram vestígios adicionais, e não houve novos disparos suspeitos partindo da conta — confirmado tanto pela verificação técnica interna quanto pelo retorno do provedor de e-mail em contato telefônico posterior. Não foram identificados sinais de propagação para outras máquinas da empresa. O relatório oficial reforça, no entanto, que não é possível garantir com certeza absoluta a ausência de qualquer código dormente remanescente, a conclusão é sustentada pelas evidências disponíveis até o momento, não uma garantia categórica.
 
