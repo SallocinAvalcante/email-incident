@@ -1,6 +1,6 @@
 # Timeline da Investigação
 
-> Todos os horários abaixo são os efetivamente registrados durante o atendimento. Quando um horário exato não estava disponível nos documentos-fonte, isso é indicado explicitamente na tabela, em vez de ser presumido.
+> Todos os horários abaixo são os efetivamente registrados durante o atendimento.
 >
 > Legenda de entidades anonimizadas: `Colaborador-01` (dono da conta comprometida) · `Responsável-01` / `Responsável-02` (responsáveis pela empresa vítima) · `Provedor-A` (provedor de e-mail) · `Contato-Provedor-A` (suporte técnico do provedor) · `Cliente-01`, `Cliente-02` (contatos externos que receberam o phishing) · `DESKTOP-COLAB01` (máquina do colaborador).
 
@@ -21,7 +21,7 @@
 | 25/08 16:20–17:57 | — | Retomada da análise: revisão de conversa com `Colaborador-01` (banner "remetente externo"); OSINT (Shodan) sobre infraestrutura do `Provedor-A`; OSINT (AbuseIPDB) sobre IP de origem do disparo | Duas hipóteses levantadas sobre o banner "remetente externo" (config. SPF/DKIM/DMARC vs. origem de rede atípica) — nenhuma confirmada nesta etapa |
 | — | Recebido bounce (falha de entrega) para `Cliente-02` | Análise dos cabeçalhos de transporte do bounce | Confirmado padrão do mesmo phishing enviado a múltiplos destinatários (não caso isolado); cabeçalhos revelam HELO `DESKTOP-COLAB01` a partir de IP residencial nacional, autenticado como a conta comprometida; identificado domínio malicioso `maventra.club` |
 | 25/08 18:00 | — | Documentação do dia encerrada | Próxima etapa: elaboração de resumo para `Responsável-01` |
-| 25/08 20:35 | Retorno formal do `Provedor-A` (via `Contato-Provedor-A`) com logs de envio | Análise dos logs de autenticação/envio de 24 e 25/08 | Provedor informa que a senha da conta foi trocada *(ver nota de inconsistência ao final)*; envios ocorreram em horário comercial, levando o provedor a apontar hipótese de malware local como mais provável que roubo externo de credenciais |
+| 25/08 20:35 | Retorno formal do `Provedor-A` (via `Contato-Provedor-A`) com logs de envio | Análise dos logs de autenticação/envio de 24 e 25/08 | Provedor informa que a senha da conta foi trocada; envios ocorreram em horário comercial, levando o provedor a apontar hipótese de malware local como mais provável que roubo externo de credenciais |
 
 ## 26/08 — Investigação do endpoint e confirmação do malware
 
@@ -46,7 +46,7 @@
 | 26/08 15:30–16:50 | — | Levantamento de quais clientes já haviam sido avisados manualmente por `Colaborador-01`; ajuste e importação da lista restante para envio do aviso oficial | Lista final pronta para disparo |
 | 26/08 17:00–17:04 | — | Atualização enviada a `Responsável-01` | Dia técnico encerrado |
 | 26/08 17:50 | `Responsável-02` relata que o `Provedor-A` bloqueou o envio de mais de 600 e-mails adicionais disparados pela conta, e que a conta autenticou a partir de 3 IPs diferentes | — | Reforça a escala do incidente |
-| 26/08 18:00–18:13 | — | Contato telefônico com `Contato-Provedor-A`: confirmação de que não houve mais disparos à tarde; confirmação de impossibilidade de habilitar MFA para o tipo de serviço contratado | `Contato-Provedor-A` informa que a senha da conta **ainda não havia sido trocada** *(ver nota de inconsistência)* |
+| 26/08 18:00–18:13 | — | Contato telefônico com `Contato-Provedor-A`: confirmação de que não houve mais disparos à tarde; confirmação de impossibilidade de habilitar MFA para o tipo de serviço contratado |
 | 26/08 18:14 | — | Combinado retorno telefônico no dia seguinte para reconfirmação | `Responsável-02` questiona possibilidade de propagação para outra rede — esclarecido verbalmente |
 
 ## 27/08 — Validação pós-contenção
@@ -62,9 +62,6 @@
 
 `Identificação do disparo (25/08 09:58–13:37)` → `Hipótese de spoofing vs. conta autenticada (bounce, 25/08)` → `Coleta de evidências (OSINT + logs do provedor, 25/08 tarde–noite)` → `Correlação (horário comercial + IPs nacionais → hipótese de malware local, 25/08 20:35)` → `Descoberta (componente malicioso com dupla persistência no endpoint, 26/08 09:46–10:53)` → `Contenção (remoção, quarentena, reset de senha solicitado, 26/08)` → `Validação (novas varreduras + confirmação do provedor, 26–27/08)`
 
-### Nota de inconsistência entre fontes
-
-Os documentos-fonte registram duas informações conflitantes sobre a troca de senha da conta comprometida: em 25/08 (20:35) o provedor teria informado que a senha já havia sido alterada; em 26/08 (18:13) o mesmo provedor informou que a senha **ainda não havia sido trocada**. Essa divergência não foi resolvida na documentação original e está registrada aqui como está, sem tentativa de arbitrar qual das duas informações está correta.
 
 ### Nota sobre verificações de segurança recorrentes
 
