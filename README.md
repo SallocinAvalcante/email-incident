@@ -4,7 +4,7 @@
 
 ## Objective
 
-Investigar a origem de um disparo em massa de e-mails de phishing partindo de uma conta corporativa legítima, determinar se houve comprometimento de credenciais ou execução de malware local, conter o incidente e validar a normalização do ambiente — documentando o processo de investigação como ele realmente ocorreu, incluindo hipóteses levantadas e depois confirmadas ou descartadas.
+Investigar a origem de um disparo em massa de e-mails de phishing partindo de uma conta corporativa legítima, determinar se houve comprometimento de credenciais ou execução de malware local, conter o incidente e validar a normalização do ambiente, documentando o processo de investigação como ele realmente ocorreu, incluindo hipóteses levantadas e depois confirmadas ou descartadas.
 
 ## Incident Overview
 
@@ -14,7 +14,7 @@ A investigação seguiu, em linhas gerais, esta progressão:
 
 1. Identificação do disparo a partir da resposta de um cliente externo que não conseguiu acessar o link recebido.
 2. Análise dos e-mails suspeitos e de um bounce (falha de entrega) que confirmou a existência de múltiplos disparos, não um caso isolado.
-3. Extração dos cabeçalhos de transporte do bounce, revelando que o envio partiu de uma submissão SMTP autenticada com as credenciais reais da conta — não um spoofing simples de "From".
+3. Extração dos cabeçalhos de transporte do bounce, revelando que o envio partiu de uma submissão SMTP autenticada com as credenciais reais da conta, não um spoofing simples de "From".
 4. Levantamento OSINT complementar (infraestrutura do provedor de e-mail e reputação do IP de origem) para sustentar hipóteses sobre a natureza do comprometimento.
 5. Acionamento formal do provedor de e-mail, com pedido de logs de autenticação/envio.
 6. Retorno do provedor com os logs, indicando que os envios ocorreram em horário comercial e a partir de IPs nacionais — o que apontou para a hipótese de malware local, e não roubo de credenciais por terceiro externo.
@@ -30,7 +30,8 @@ A investigação evoluiu de forma incremental, com as hipóteses sendo reforçad
 - **Evidência que refutou a hipótese inicial**: os cabeçalhos do e-mail devolvido (bounce) mostraram uma submissão SMTP autenticada com as credenciais reais da conta, passando pela infraestrutura legítima do provedor — ou seja, a conta foi de fato usada, não apenas falsificada.
 - **Hipótese concorrente nº 1**: comprometimento de credenciais por terceiro externo (ex.: senha vazada/força bruta).
 - **Hipótese concorrente nº 2**: malware local na máquina do colaborador, utilizando a sessão/autenticação já existente para disparar e-mails.
-- **Evidências que pesaram a favor da hipótese nº 2**: os envios ocorreram dentro do horário comercial (atípico para ataques externos clássicos, que costumam ocorrer fora do expediente); os IPs de autenticação eram todos nacionais e variavam conforme a rede em que o notebook do colaborador se conectava (típico de execução local, não de infraestrutura de ataque centralizada); consulta OSINT ao IP de origem mostrou tratar-se de uma linha residencial (DSL) — indício circunstancial, não conclusivo.
+- **Evidências que pesaram a favor da hipótese nº 2**: os envios ocorreram dentro do horário comercial (atípico para ataques externos clássicos, que costumam ocorrer fora do expediente); os IPs de autenticação eram todos nacionais e variavam conforme a rede em que o notebook do colaborador se conectava (típico de execução local, não de infraestrutura de ataque centralizada); consulta OSINT ao IP de origem mostrou tratar-se de uma linha residencial (DSL), que é um indício circunstancial, não conclusivo.
+- 
 - **Confirmação**: a varredura remota do endpoint identificou um componente malicioso com persistência dupla em `AppData`, replicando exatamente o comportamento necessário para sustentar os disparos observados.
 
 ## Findings
@@ -67,12 +68,12 @@ A análise aprofundada do comportamento do malware (engenharia reversa, análise
 - Varredura completa (ferramenta de segurança da Microsoft) e verificação manual de itens de inicialização (Autoruns) e processos ativos, repetidas após a remoção.
 - Monitoramento da máquina por um período para confirmar que a pasta maliciosa não era mais recriada.
 - Acionamento do provedor de e-mail para bloqueio de novos disparos, extração de logs e apoio na investigação.
-- Reset de senha solicitado ao provedor (ver ressalva na Timeline sobre inconsistência quanto à confirmação da troca).
+- Reset de senha solicitado ao provedor
 - Levantamento e comunicação da lista de destinatários externos atingidos, para envio de aviso oficial.
 
 ## Outcome
 
-Após a remoção do componente malicioso, novas varreduras não identificaram vestígios adicionais, e não houve novos disparos suspeitos partindo da conta — confirmado tanto pela verificação técnica interna quanto pelo retorno do provedor de e-mail em contato telefônico posterior. Não foram identificados sinais de propagação para outras máquinas da empresa. O relatório oficial reforça, no entanto, que não é possível garantir com certeza absoluta a ausência de qualquer código dormente remanescente — a conclusão é sustentada pelas evidências disponíveis até o momento, não uma garantia categórica.
+Após a remoção do componente malicioso, novas varreduras não identificaram vestígios adicionais, e não houve novos disparos suspeitos partindo da conta — confirmado tanto pela verificação técnica interna quanto pelo retorno do provedor de e-mail em contato telefônico posterior. Não foram identificados sinais de propagação para outras máquinas da empresa. O relatório oficial reforça, no entanto, que não é possível garantir com certeza absoluta a ausência de qualquer código dormente remanescente, a conclusão é sustentada pelas evidências disponíveis até o momento, não uma garantia categórica.
 
 ## IOCs
 
@@ -92,10 +93,10 @@ Técnicas com evidência suficiente nos documentos (justificativas detalhadas em
 | T1114.001 | Email Collection: Local Email Collection |
 | T1071.003 | Application Layer Protocol: Mail Protocols |
 
-## Lessons Learned
+## Aprendizados
 
 - **Cabeçalhos completos de e-mail são essenciais e nem sempre estão disponíveis por padrão.** A cópia original de um dos e-mails suspeitos não preservava cabeçalhos de transporte por ter sido extraída de uma resposta/encaminhamento — a confirmação técnica da submissão SMTP autenticada só foi possível graças a uma cópia do bounce, que por acaso preservou essa cadeia. Vale padronizar a coleta de `.eml` originais (não encaminhados) desde o primeiro sinal de incidente.
 - **Autenticação corporativa sem MFA é um ponto de falha relevante.** O ambiente de e-mail utilizado não oferece suporte a MFA para o tipo de serviço contratado, o que eliminou uma camada de proteção que poderia ter dificultado (ou ao menos evidenciado mais rapidamente) o uso indevido da sessão/credencial autenticada.
-- **Verificações OSINT complementares (reputação de IP, exposição de infraestrutura do provedor) agregam contexto, mas precisam ser tratadas com o devido ceteris paribus.** Achados como a porta Java RMI exposta no provedor são pontos válidos para cobrar do fornecedor, mas não devem ser tratados como causa confirmada do incidente sem validação adicional.
-- **Persistência dupla em malwares leves reforça a importância de reverificação após a primeira remoção.** A simples finalização do processo principal não foi suficiente — foi necessário identificar o processo "vigia" responsável por recriar os artefatos.
+- **Verificações OSINT complementares (reputação de IP, exposição de infraestrutura do provedor) agregam contexto, mas precisam ser tratadas como achados, não confirmações.** Achados como a porta Java RMI exposta no provedor são pontos válidos para cobrar do fornecedor, mas não devem ser tratados como causa confirmada do incidente sem validação adicional.
+- **Persistência dupla em malwares leves reforça a importância de reverificação após a primeira remoção.** A simples finalização do processo principal não foi suficiente, foi necessário identificar o processo "vigia" responsável por recriar os artefatos.
 - **Comunicação simultânea com o cliente durante a investigação técnica ajuda a conter o dano reputacional.** O aviso proativo aos destinatários externos, mesmo antes da confirmação definitiva da causa raiz, reduziu a chance de novas vítimas caírem no golpe.
