@@ -31,7 +31,7 @@ A investigação evoluiu de forma incremental, com as hipóteses sendo reforçad
 - **Hipótese concorrente nº 1**: comprometimento de credenciais por terceiro externo (ex.: senha vazada/força bruta).
 - **Hipótese concorrente nº 2**: malware local na máquina do colaborador, utilizando a sessão/autenticação já existente para disparar e-mails.
 - **Evidências que pesaram a favor da hipótese nº 2**: os envios ocorreram dentro do horário comercial (atípico para ataques externos clássicos, que costumam ocorrer fora do expediente); os IPs de autenticação eram todos nacionais e variavam conforme a rede em que o notebook do colaborador se conectava (típico de execução local, não de infraestrutura de ataque centralizada); consulta OSINT ao IP de origem mostrou tratar-se de uma linha residencial (DSL), que é um indício circunstancial, não conclusivo.
-- 
+  
 - **Confirmação**: a varredura remota do endpoint identificou um componente malicioso com persistência dupla em `AppData`, replicando exatamente o comportamento necessário para sustentar os disparos observados.
 
 ## Achados
