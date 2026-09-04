@@ -1,0 +1,118 @@
+# Indicadores de Comprometimento (IOCs)
+
+> Este arquivo contém somente os indicadores efetivamente identificados durante a investigação. Indicadores de rede que poderiam expor a localização/identidade do colaborador (IPs de submissão residenciais) foram substituídos por placeholders, conforme critério de anonimização. Indicadores relacionados diretamente ao ataque/malware (domínio malicioso, hash do binário abusado, padrões de e-mail) foram preservados, por não identificarem a vítima.
+
+---
+
+## Network
+
+**Domínio malicioso (confirmado):**
+- `maventra.club` — domínio de destino do botão "Consultar documento" presente nos e-mails de phishing. Não pertence à empresa vítima nem aos destinatários.
+
+**Padrão de URL (confirmado):**
+- `https://maventra.club/d/?n=<numero_atendimento>`
+
+**IPs de submissão SMTP (confirmados via logs do provedor — autenticados com a conta comprometida; valores originais omitidos por conterem informação potencialmente pessoal/identificável do colaborador):**
+- `IP-ORIGEM-01` — enlace residencial (DSL), operadora nacional, São Paulo/BR. Usado no disparo de phishing e presente nos cabeçalhos do e-mail devolvido (bounce).
+- `IP-ORIGEM-02` — enlace nacional (ISP diferente do IP-ORIGEM-01). Usado tanto em envios legítimos quanto em um dos disparos de phishing.
+- `IP-ORIGEM-03` — enlace móvel/nacional (operadora diferente). Usado em um envio legítimo durante o período analisado.
+- Observação: os três IPs são nacionais (Brasil), o que o próprio provedor classificou como atípico para um ataque externo clássico — reforça (mas não prova sozinho) a hipótese de execução local do malware, com variação de IP conforme a rede em que a máquina se conectava.
+
+**Hostname/HELO de origem (confirmado em todos os logs de envio):**
+- `DESKTOP-COLAB01` — máquina do colaborador cuja conta foi comprometida; confirmada como o endpoint onde o componente malicioso foi identificado e removido.
+
+**Infraestrutura do provedor de e-mail (achados OSINT — não são IOCs do ataque; pontos de exposição a validar com o provedor, não vulnerabilidades confirmadas):**
+- Servidores de e-mail hospedados em nuvem pública (identificados via OSINT passivo).
+- Banner de sistema de quarentena/antiphishing ativo — achado positivo, consistente com a quarentena automática observada durante o incidente.
+- Serviço anunciando mecanismo de autenticação `AUTH LOGIN PLAIN` — não confirmado se exige TLS/STARTTLS antes da autenticação (ponto a verificar, não vulnerabilidade confirmada).
+- Porta 1099 (Java RMI) exposta publicamente — vetor potencialmente sensível a verificar; não confirmado como explorado neste incidente.
+- Porta 110 (POP3 sem TLS) exposta — risco potencial de credenciais em texto claro se algum cliente ainda usar POP3 puro; não confirmado uso ativo.
+- Portas 25/465 (SMTP) e 53 (DNS) expostas — esperado para um provedor de e-mail, não é uma falha por si só.
+
+---
+
+## Email
+
+**Assuntos utilizados no phishing (confirmados):**
+- "Comprovante fiscal do seu pedido"
+- "Documento referente ao faturamento do período"
+
+**Remetente (confirmado):**
+- Conta corporativa legítima e previamente autenticada da vítima (anonimizada como `colaborador01@empresa-a.local`), não um endereço falsificado.
+
+**Padrão de conteúdo (confirmado):**
+- Notificação de "atendimento nº <número>", valor monetário fictício em R$, e botão "Consultar documento" direcionando ao domínio malicioso listado em Network.
+
+**Característica técnica relevante (confirmado):**
+- A cópia original de pelo menos um e-mail de phishing não preservava cabeçalhos completos de transporte (Received, Authentication-Results, SPF/DKIM/DMARC) por ter sido extraída de uma resposta/encaminhamento — a confirmação da submissão SMTP autenticada só foi possível a partir de uma mensagem devolvida (bounce) que preservou essa cadeia.
+
+**Escala do disparo (confirmado, via logs do provedor):**
+- 502 destinatários únicos identificados no período analisado (113 em um dia + 412 no dia seguinte, deduplicados), sendo 488 externos à empresa após remoção de endereços internos.
+- O provedor bloqueou o envio de mais de 600 e-mails adicionais em um momento posterior do incidente (valor informado pelo provedor, não detalhado tecnicamente nos documentos-fonte).
+
+---
+
+## Host
+
+**Caminho/pasta principal do componente malicioso (confirmado):**
+- `AppData\Local\M05RVlRDSQ\` (nome de pasta variando ligeiramente entre fontes de captura, mesma artefato)
+  - `M05RVlRDSQ.exe` — binário do interpretador Python legítimo, reaproveitado para execução do componente malicioso (ver seção Hashes).
+  - `M05RVlRDSQx.exe` — segunda instância/variante do binário, identificada em execução ativa.
+  - Arquivo de texto contendo script ofuscado em Base64, executado pelo binário Python acima.
+  - Arquivos gerados automaticamente pela persistência, nomeados a partir do endereço de e-mail da conta comprometida (padrão: `prog_<conta>` e `contatos_<conta>.json`), além de um artefato adicional (`_htmp`).
+
+**Pasta do componente secundário/"vigia" (confirmado):**
+- `AppData\Local\Microsoft\<pasta_disfarçada>` — pasta oculta, nomeada de forma a se camuflar como diretório legítimo da Microsoft, hospedando o processo responsável por recriar os artefatos da pasta principal quando finalizados.
+
+**Extensões observadas:**
+- `.exe` (binários), `.json` (dados de contatos), `.txt` (script Base64)
+
+---
+
+## Process
+
+**Processo principal (confirmado):**
+- `M05RVlRDSQ.exe` / `M05RVlRDSQx.exe` — executado a partir da pasta em `AppData\Local`, identificado ativo via inspeção manual de processos; finalizado via `taskkill`.
+
+**Processo secundário/"vigia" (confirmado):**
+- Processo com nome ofuscado (padrão alfanumérico aleatório), executado a partir da pasta disfarçada como diretório da Microsoft; comportamento observado: ao finalizar o processo principal, este processo recriava os artefatos da pasta maliciosa. Relação pai/filho entre os dois processos **não determinada** com precisão pelos documentos disponíveis.
+
+**Comportamento observado (não é IOC, é observação comportamental):**
+- Persistência dupla, com um componente atuando como "gatilho de recriação" do outro.
+- Uso de nomes de pasta e arquivo aleatórios/ofuscados para dificultar identificação manual.
+- Abuso de binário legítimo (interpretador Python) para execução de script malicioso — técnica de "living off the land".
+
+---
+
+## Persistence
+
+Mecanismos efetivamente identificados:
+
+1. **Chave de execução automática (Run key) no registro do Windows**, apontando para o binário principal do componente malicioso — identificada via ferramenta de inspeção de itens de inicialização (Autoruns).
+2. **Processo "vigia" em pasta oculta disfarçada como diretório da Microsoft**, que recriava os artefatos do componente principal quando este era finalizado. O mecanismo pelo qual esse segundo processo, por sua vez, se mantinha persistente entre reinicializações **não foi determinado** com detalhe nos documentos disponíveis.
+
+---
+
+## Hashes
+
+| Tipo | Valor | Observação |
+| --- | --- | --- |
+| SHA256 | `DB57FBF86C8306809673BE5850779B2DCDA94BD8C36047840E27175CD30C257A` | Hash do binário identificado na pasta maliciosa; verificado como pertencente a um **componente legítimo do interpretador Python** (não malicioso por si só). O comportamento malicioso reside no script Base64 executado por esse binário, não no binário em si. |
+
+MD5 e SHA1: **não disponíveis** nos documentos-fonte. Hash do script malicioso em Base64 e do processo "vigia": **não coletados/não disponíveis** na documentação original.
+
+---
+
+## MITRE ATT&CK
+
+| ID | Nome | Justificativa baseada em evidência |
+| --- | --- | --- |
+| T1566.002 | Phishing: Spearphishing Link | E-mails enviados a partir da conta comprometida continham um botão/link direcionando a um domínio malicioso externo (`maventra.club`), confirmado nos cabeçalhos do bounce analisado. |
+| T1547.001 | Boot or Logon Autostart Execution: Registry Run Keys | Identificada, via Autoruns, uma entrada de execução automática no registro apontando para o binário do componente malicioso. |
+| T1036.005 | Masquerading: Match Legitimate Name or Location | O processo "vigia" residia em uma pasta oculta nomeada para se assemelhar a um diretório legítimo da Microsoft dentro de `AppData\Local`. |
+| T1059.006 | Command and Scripting Interpreter: Python | O componente malicioso utilizava um binário legítimo do interpretador Python para executar um script ofuscado, conforme identificado na análise do endpoint. |
+| T1027 | Obfuscated Files or Information | Identificado arquivo de texto com script codificado em Base64, executado pelo binário Python para ocultar o conteúdo/comportamento malicioso. |
+| T1114.001 | Email Collection: Local Email Collection | Identificados arquivos gerados automaticamente pela persistência contendo dados de contatos associados à conta de e-mail comprometida, consistentes com coleta de informações locais de contatos/e-mail. |
+| T1071.003 | Application Layer Protocol: Mail Protocols | Os disparos de phishing utilizaram o canal SMTP legítimo já autenticado na máquina, conforme confirmado pelos logs de envio do provedor. |
+
+Técnicas **não mapeadas** por falta de evidência suficiente nos documentos: técnica de acesso inicial ao endpoint (vetor de infecção original não determinado); técnica específica de captação/reuso de credenciais (mencionado uso de um banco de dados local para os disparos, mas sem detalhe técnico suficiente para mapear com precisão).
