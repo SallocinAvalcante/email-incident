@@ -17,7 +17,7 @@ A investigação seguiu, em linhas gerais, esta progressão:
 3. Extração dos cabeçalhos de transporte do bounce, revelando que o envio partiu de uma submissão SMTP autenticada com as credenciais reais da conta, não um spoofing simples de "From".
 4. Levantamento OSINT complementar (infraestrutura do provedor de e-mail e reputação do IP de origem) para sustentar hipóteses sobre a natureza do comprometimento.
 5. Acionamento formal do provedor de e-mail, com pedido de logs de autenticação/envio.
-6. Retorno do provedor com os logs, indicando que os envios ocorreram em horário comercial e a partir de IPs nacionais — o que apontou para a hipótese de malware local, e não roubo de credenciais por terceiro externo.
+6. Retorno do provedor com os logs, indicando que os envios ocorreram em horário comercial e a partir de IPs nacionais, o que apontou para a hipótese de malware local, e não roubo de credenciais por terceiro externo.
 7. Verificação remota do endpoint do colaborador, com identificação e remoção de um componente malicioso com dupla persistência.
 8. Levantamento da lista completa de destinatários atingidos junto ao provedor e organização do aviso oficial aos clientes.
 9. Validação pós-contenção, com novas varreduras e confirmação, junto ao provedor, de que os disparos haviam cessado.
